@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-6',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 1024,
         system: 'あなたはHatarakAIの求人アドバイザーです。ユーザーの仕事探しや転職相談に親切丁寧に日本語でお答えください。医療・福祉・介護・IT・事務など幅広い職種に対応しています。給与・待遇・働き方・資格取得など、求職者が知りたい情報を具体的にアドバイスしてください。回答は簡潔にまとめ、箇条書きを活用してわかりやすくしてください。',
         messages,
@@ -43,10 +43,12 @@ export async function POST(req: NextRequest) {
     const currentUsage = usageMap.get(ip);
     const remaining = DAILY_LIMIT - (currentUsage?.count || 0);
 
-    return NextResponse.json({
-      content: data.content?.[0]?.text || '',
-      remaining,
-    });
+    // Anthropicのレスポンス構造: data.content は配列、各要素に type と text がある
+    const text = Array.isArray(data.content)
+      ? data.content.filter((c: { type: string }) => c.type === 'text').map((c: { text: string }) => c.text).join('')
+      : '';
+
+    return NextResponse.json({ content: text, remaining });
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json(
