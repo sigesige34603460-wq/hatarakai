@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { messages } = await req.json();
+    const { message } = await req.json();
 
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -35,16 +35,25 @@ export async function POST(req: NextRequest) {
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 1024,
         system: 'あなたはHatarakAIの求人アドバイザーです。ユーザーの仕事探しや転職相談に親切丁寧に日本語でお答えください。',
-        messages,
+        messages: [{ role: 'user', content: message }],
       }),
     });
 
+    if (!res.ok) {
+      const errData = await res.json();
+      console.error('Anthropic API error:', errData);
+      return NextResponse.json(
+        { error: errData.error?.message || 'AIとの通信に失敗しました。' },
+        { status: res.status }
+      );
+    }
+
     const data = await res.json();
+    const reply = data.content?.[0]?.text ?? 'すみません、回答を生成できませんでした。';
     const currentUsage = usageMap.get(ip);
     const remaining = DAILY_LIMIT - (currentUsage?.count || 0);
 
-    // デバッグ：レスポンス全体を返す
-    return NextResponse.json({ debug: data, remaining });
+    return NextResponse.json({ reply, remaining });
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json(
