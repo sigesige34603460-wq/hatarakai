@@ -188,7 +188,7 @@ export default function Home() {
               type="text"
               value={input}
               onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && sendMessage()}
+              onKeyDown={e => e.key === 'Enter' && !e.nativeEvent.isComposing && sendMessage()}
               placeholder="メッセージを入力..."
               style={{
                 flex: 1,
