@@ -3,6 +3,17 @@ import { NextRequest, NextResponse } from 'next/server';
 const DAILY_LIMIT = 10;
 const usageMap = new Map();
 
+const SYSTEM_PROMPT = `あなたはHatarakAIの親切な就職・転職アドバイザーです。
+ユーザーの仕事探しを、信頼できる友人のようにサポートしてください。
+
+【会話の進め方】
+- 一度に1〜2個の質問をしながら、相手の状況を丁寧に聞き出してください
+- 聞くべき情報：現在の状況（在職中/求職中）、希望職種・業種、希望勤務地、働き方（正社員/パート/在宅など）、希望年収、経験・資格
+- 情報が集まったら、具体的な求人の方向性やアドバイスを提案してください
+- 返答は短くわかりやすく、絵文字を適度に使って親しみやすくしてください
+- 一度に大量の情報を出さず、会話のキャッチボールを大切にしてください
+- 常に日本語で回答してください`;
+
 export async function POST(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
   const today = new Date().toISOString().split('T')[0];
@@ -22,7 +33,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { message } = await req.json();
+    const { messages } = await req.json();
 
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -33,9 +44,9 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1024,
-        system: 'あなたはHatarakAIの求人アドバイザーです。ユーザーの仕事探しや転職相談に親切丁寧に日本語でお答えください。',
-        messages: [{ role: 'user', content: message }],
+        max_tokens: 512,
+        system: SYSTEM_PROMPT,
+        messages,
       }),
     });
 
